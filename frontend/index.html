@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Git Graveyard</title>
+    <link rel="stylesheet" href="/app/style.css">
+</head>
+
+<body>
+
+    <main>
+        <img src="/app/logo.png" alt="Git Graveyard Logo">
+        <h1>Git Graveyard</h1>
+
+        <p>Analyze your Git repository</p>
+
+        <div>
+            <input
+                type="text"
+                id="repositoryPath"
+                placeholder="Enter repository path"
+            >
+
+            <button id="analyzeButton">
+                Analyze
+            </button>
+        </div>
+
+        <div id="status"></div>
+
+        <section id="results">
+            <h2>Repository</h2>
+
+            <p>
+                Name:
+                <span id="repositoryName">-</span>
+            </p>
+
+            <p>
+                Branch:
+                <span id="repositoryBranch">-</span>
+            </p>
+
+            <p>
+                Total Commits:
+                <span id="totalCommits">-</span>
+            </p>
+
+            <p>
+                Contributors:
+                <span id="totalContributors">-</span>
+            </p>
+
+            <h2>Latest Commit</h2>
+
+            <p>
+                Message:
+                <span id="latestCommitMessage">-</span>
+            </p>
+
+            <p>
+                Author:
+                <span id="latestCommitAuthor">-</span>
+            </p>
+
+            <p>
+                Date:
+                <span id="latestCommitDate">-</span>
+            </p>
+        </section>
+    </main>
+
+    <script src="/app/script.js"></script>
+
+</body>
+</html>
