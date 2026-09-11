@@ -2,6 +2,7 @@ from git_analysis.repository_analyzer import RepositoryAnalyzer
 from git_analysis.commit_analyzer import CommitAnalyzer
 from git_analysis.file_analyzer import FileAnalyzer
 from git_analysis.file_activity_analyzer import FileActivityAnalyzer
+from git_analysis.activity_analyzer import ActivityAnalyzer
 
 
 class RepositoryService:
@@ -20,9 +21,13 @@ class RepositoryService:
         file_activity_analyzer = FileActivityAnalyzer(repository_analyzer.repo)
         file_activity_data = file_activity_analyzer.analyze()
 
+        activity_analyzer = ActivityAnalyzer(file_activity_data)
+        activity_data = activity_analyzer.analyze()
+
         return {
             "repository": repository_data,
             "commits": commit_data,
             "files": file_data,
             "file_activity": file_activity_data,
+            "activity": activity_data,
         }

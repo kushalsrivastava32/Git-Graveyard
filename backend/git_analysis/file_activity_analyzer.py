@@ -57,12 +57,3 @@ class FileActivityAnalyzer:
             self._build_file_activity(file_path)
             for file_path in files
         ]
-
-if __name__ == "__main__":
-    from git import Repo
-
-    repo = Repo("D:/Git Graveyard/Git-Graveyard")
-
-    analyzer = FileActivityAnalyzer(repo)
-
-    print(analyzer.analyze())
