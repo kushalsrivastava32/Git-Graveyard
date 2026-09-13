@@ -2,6 +2,7 @@ import importlib
 import os
 import sys
 from pathlib import Path
+from datetime import datetime, timezone
 
 
 def _import_gitpython():
@@ -60,12 +61,21 @@ class RepositoryAnalyzer:
         self._validate_path()
         self._open_repository()
 
+        latest_commit = self._get_latest_commit()
+
+        repository_days_since_last_commit = (
+            self._calculate_days_since_last_commit(
+                latest_commit["date"] if latest_commit else None
+            )
+        )
+
         return {
             "name": self._get_repository_name(),
             "path": self.path,
             "current_branch": self._get_current_branch(),
             "total_commits": self._count_commits(),
-            "latest_commit": self._get_latest_commit(),
+            "latest_commit": latest_commit,
+            "repository_days_since_last_commit": repository_days_since_last_commit,
         }
 
     def _validate_path(self):
@@ -112,3 +122,23 @@ class RepositoryAnalyzer:
             "date": commit.committed_datetime.isoformat(),
             "message": commit.message.strip(),
         }
+    
+    def _calculate_days_since_last_commit(self, last_commit_date):
+        """
+        Calculates the number of days since the repository's latest commit.
+        """
+        if last_commit_date is None:
+            return None
+
+        commit_datetime = datetime.fromisoformat(last_commit_date)
+
+        if commit_datetime.tzinfo is None:
+            commit_datetime = commit_datetime.replace(
+                tzinfo=timezone.utc
+            )
+
+        now = datetime.now(timezone.utc)
+
+        difference = now - commit_datetime
+
+        return difference.days

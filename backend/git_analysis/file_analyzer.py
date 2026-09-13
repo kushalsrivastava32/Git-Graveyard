@@ -1,4 +1,6 @@
 from pathlib import Path
+
+
 class FileAnalyzer:
     """
     Analyzes files tracked by a Git repository.
@@ -16,14 +18,23 @@ class FileAnalyzer:
     def _get_file_sizes(self, files):
         """
         Returns the size of each tracked file in bytes.
+
+        Git can report files that no longer exist on disk (for example
+        after a rename or manual deletion that hasn't been committed yet).
+        Those files are skipped rather than crashing the analysis.
         """
         sizes = {}
 
         for file_path in files:
             full_path = Path(self.repo.working_tree_dir) / file_path
-            sizes[file_path] = full_path.stat().st_size
+            try:
+                sizes[file_path] = full_path.stat().st_size
+            except FileNotFoundError:
+                # Tracked by Git but absent from the working tree — skip.
+                continue
 
         return sizes
+
     def _build_file_summary(self, file_sizes):
         """
         Builds basic file count and total size information.
@@ -32,7 +43,7 @@ class FileAnalyzer:
             "total_files": len(file_sizes),
             "total_size_bytes": sum(file_sizes.values()),
         }
-    
+
     def _build_extension_summary(self, file_sizes):
         """
         Groups files by their file extension.
@@ -70,7 +81,7 @@ class FileAnalyzer:
             }
             for file_path, size in largest
         ]
-    
+
     def analyze(self):
         """
         Runs the complete file analysis.
@@ -87,4 +98,3 @@ class FileAnalyzer:
             "files_by_extension": extensions,
             "largest_files": largest_files,
         }
-

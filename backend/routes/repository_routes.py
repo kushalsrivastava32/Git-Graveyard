@@ -1,9 +1,14 @@
 from flask import Blueprint, jsonify, request
 
-from git_analysis.repository_analyzer import NotAGitRepositoryError, PathNotFoundError
+from git_analysis.repository_analyzer import (
+    NotAGitRepositoryError,
+    PathNotFoundError,
+)
 from services.repository_service import RepositoryService
 
-repository_bp = Blueprint("repository", __name__, url_prefix="/api/repository")
+repository_bp = Blueprint(
+    "repository", __name__, url_prefix="/api/repository"
+)
 repository_service = RepositoryService()
 
 
@@ -24,11 +29,26 @@ def analyze_repository():
     try:
         result = repository_service.analyze_repository(path.strip())
         return jsonify(result), 200
+
     except PathNotFoundError as error:
         return jsonify({"error": str(error)}), 404
+
+    except FileNotFoundError as error:
+        # Raised by LocalRepositoryProvider if the path disappears
+        # between validation and use.
+        return jsonify({"error": str(error)}), 404
+
     except NotAGitRepositoryError as error:
         return jsonify({"error": str(error)}), 422
+
     except Exception:
-        return jsonify(
-            {"error": "An unexpected error occurred while analyzing the repository."}
-        ), 500
+        # Log full traceback to the terminal for debugging,
+        # but never expose internals to the client.
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "error": (
+                "An unexpected error occurred while analyzing "
+                "the repository."
+            )
+        }), 500

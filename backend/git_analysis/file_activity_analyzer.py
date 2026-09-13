@@ -33,6 +33,7 @@ class FileActivityAnalyzer:
             return {
                 "path": file_path,
                 "commit_count": 0,
+                "first_modified": None,
                 "last_modified": None,
             }
 
@@ -41,9 +42,15 @@ class FileActivityAnalyzer:
             key=lambda commit: commit.committed_datetime
         )
 
+        oldest_commit = min(
+            commits,
+            key=lambda commit: commit.committed_datetime
+        )
+
         return {
             "path": file_path,
             "commit_count": len(commits),
+            "first_modified": oldest_commit.committed_datetime.isoformat(),
             "last_modified": latest_commit.committed_datetime.isoformat(),
         }
 
