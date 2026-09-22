@@ -22,6 +22,7 @@ from git_analysis.commit_analyzer import CommitAnalyzer
 from git_analysis.file_analyzer import FileAnalyzer
 from git_analysis.file_activity_analyzer import FileActivityAnalyzer
 from git_analysis.activity_analyzer import ActivityAnalyzer
+from git_analysis.graveyard_analyzer import GraveyardAnalyzer
 
 from services.providers.local_provider import LocalRepositoryProvider
 
@@ -31,37 +32,28 @@ class RepositoryService:
 
     def analyze_repository(self, source):
         """
-        Analyze a repository.
-
-        Parameters
-        ----------
-        source : str | RepositoryProvider
-            - If a string  -> treated as a local path (backward compatible).
-            - If a provider -> used directly (local OR GitHub).
-
-        Returns
-        -------
-        dict
-            Combined analysis output from all analyzers.
+        Analyze a repository. Accepts a local path (str) or a provider.
+        If the provider supports context management (GitHub), its
+        lifecycle is managed here.
         """
-
-        # --- Step 1: Resolve the provider --------------------------------
         provider = self._resolve_provider(source)
 
-        # --- Step 2: Build a GitPython repo (local only for now) ---------
-        # For local: provider.repo is a real GitPython Repo.
-        # For GitHub: this will raise NotImplementedError until you
-        # implement GitHubRepositoryProvider fully.
-        repo = provider.get_repo()
+        if hasattr(provider, "__enter__") and hasattr(provider, "__exit__"):
+            with provider:
+                return self._run_analyzers(provider)
+        else:
+            return self._run_analyzers(provider)
 
-        # --- Step 3: Run analyzers --------------------------------------
-        # RepositoryAnalyzer still expects a local path (unchanged).
-        # GitHub support for this analyzer comes in a later milestone.
+    def _run_analyzers(self, provider):
+        """Run all analyzers against the provider's repository."""
         repository_analyzer = RepositoryAnalyzer(provider.path)
         repository_data = repository_analyzer.analyze()
-
-        # Everything else uses the GitPython repo, exactly like before.
         repo = repository_analyzer.repo
+
+        # For GitHub clones, the temp folder name is noise — use
+        # the real repo name instead.
+        if hasattr(provider, "repo_name") and provider.repo_name:
+            repository_data["name"] = provider.repo_name
 
         commit_analyzer = CommitAnalyzer(repo)
         commit_data = commit_analyzer.analyze()
@@ -75,15 +67,20 @@ class RepositoryService:
         activity_analyzer = ActivityAnalyzer(file_activity_data)
         activity_data = activity_analyzer.analyze()
 
-        # --- Step 4: Combine ---------------------------------------------
+        # Score each file for potential abandonment.
+        graveyard_analyzer = GraveyardAnalyzer(
+            activity_data, repository_data
+        )
+        graveyard_data = graveyard_analyzer.analyze()
+
         return {
             "repository": repository_data,
             "commits": commit_data,
             "files": file_data,
             "file_activity": file_activity_data,
             "activity": activity_data,
+            "graveyard": graveyard_data,
         }
-
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
